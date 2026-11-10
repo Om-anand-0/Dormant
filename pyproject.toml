@@ -1,0 +1,83 @@
+[build-system]
+requires = ["hatchling>=1.33", "hatch-vcs>=0.5"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dormant"
+dynamic = ["version"]
+description = "Archive dependency and build folders in stale projects and restore them when you come back."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Om Anand" }]
+requires-python = ">=3.11"
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: System :: Archiving",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+dependencies = [
+    "typer>=0.29.0",
+    "rich>=15.0.0",
+    "zstandard>=0.25.0",
+    "platformdirs>=4.14.5",
+    "psutil>=7.2.2",
+]
+
+[project.optional-dependencies]
+tui = ["textual>=8.2.8"]
+
+[project.scripts]
+dormant = "dormant.__main__:main"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.4",
+    "mypy>=2.4.1",
+    "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
+    "hypothesis>=6.170.15",
+    "pre-commit>=4.7.0",
+]
+
+[tool.hatch.version]
+source = "vcs"
+fallback-version = "0.0.0"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "SIM", "RUF", "PTH", "C4", "PT", "S", "BLE"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--strict-markers", "--strict-config"]
+markers = ["slow: tests slower than 2 seconds (deselect with -m 'not slow')"]
+
+[tool.coverage.run]
+source = ["dormant"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
