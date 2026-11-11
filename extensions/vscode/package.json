@@ -3,7 +3,7 @@
   "displayName": "Dormant",
   "description": "Wakes hibernated dependency folders (node_modules, .venv, ...) when you open a project.",
   "version": "0.1.0",
-  "publisher": "om-anand",
+  "publisher": "Om-anand-0",
   "license": "MIT",
   "repository": {
     "type": "git",
