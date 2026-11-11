@@ -104,16 +104,20 @@ def scan(
     older: OlderOpt = None,
     kind: KindOpt = None,
     json_out: JsonOpt = False,
+    show_all: Annotated[
+        bool, typer.Option("--all", help="Also list folders smaller than min_archive_size.")
+    ] = False,
 ) -> None:
     """List projects, their reclaimable folders, sizes and last activity."""
     max_age = _parse_older(older)
     kinds = _parse_kinds(kind)
     _warn_wsl(path)
-    rows = survey(path, kinds, max_age, config.load_settings().ignore)
+    settings = config.load_settings()
+    rows = survey(path, kinds, max_age, settings.ignore)
     if json_out:
         _write_json([_row_json(r) for r in rows])
     else:
-        _print_table(rows, Path(path).absolute())
+        _print_table(rows, Path(path).absolute(), 0 if show_all else settings.min_archive_size)
 
 
 def _write_json(data: object) -> None:
@@ -178,11 +182,13 @@ def _rel(path: Path, base: Path) -> str:
     return str(path.relative_to(base)) if path.is_relative_to(base) else str(path)
 
 
-def _print_table(rows: list[Row], base: Path) -> None:
+def _print_table(rows: list[Row], base: Path, min_bytes: int) -> None:
     table = Table(
         "Project", "Ecosystems", "Target", "Kind", "Reclaimable", "Last activity", "Notes"
     )
-    flat = [(r, t) for r in rows for t in r.project.targets]
+    every = [(r, t) for r in rows for t in r.project.targets]
+    # Hard-linked targets stay: their small reclaimable size is why they get purged.
+    flat = [(r, t) for r, t in every if t.reclaimable_bytes >= min_bytes or t.hardlinked]
     for r, t in sorted(flat, key=lambda rt: rt[1].reclaimable_bytes, reverse=True):
         notes = [n for n, on in (("tracked", t.tracked), ("in use", r.in_use)) if on]
         notes += ["hard-linked"] if t.hardlinked else []
@@ -197,7 +203,10 @@ def _print_table(rows: list[Row], base: Path) -> None:
         )
     out.print(table)
     total = sum(r.reclaimable for r in rows)
-    out.print(f"{len(flat)} targets in {len(rows)} projects, {format_size(total)} reclaimable")
+    projects = len({id(r) for r, _ in flat})
+    out.print(f"{len(flat)} targets in {projects} projects, {format_size(total)} reclaimable")
+    if hidden := len(every) - len(flat):
+        out.print(f"{hidden} folders under {format_size(min_bytes)} hidden; --all shows them")
 
 
 def _age(ts: float) -> str:

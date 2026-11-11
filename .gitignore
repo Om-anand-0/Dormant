@@ -17,3 +17,6 @@ wheels/
 .coverage
 .coverage.*
 htmlcov/
+
+# Local logs
+*.log

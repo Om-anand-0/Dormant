@@ -48,7 +48,7 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run mypy src
       # Fails below the 80% overall floor set in [tool.coverage.report] fail_under.
-      - run: uv run pytest --cov=dormant --cov-report=xml --cov-report=term
+      - run: uv run pytest -rs --cov=dormant --cov-report=xml --cov-report=term
       - name: Coverage floor for archive core (90%)
         run: uv run coverage report --include="src/dormant/archiver.py,src/dormant/restorer.py,src/dormant/index.py" --fail-under=90
       - run: uv run dormant --version

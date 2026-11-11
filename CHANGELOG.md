@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `dormant scan` hides folders smaller than `min_archive_size` from its table and says how many it hid; `--all` lists them. `--json` output still includes every folder.
+
+### Fixed
+
+- `dormant scan` no longer walks into a `node_modules`, `.venv`, `vendor` or similar folder whose parent isn't a recognised project, where it listed hundreds of packages as projects.
+
 ## [0.1.0] - 2026-11-11
 
 ### Added
