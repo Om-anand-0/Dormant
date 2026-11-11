@@ -20,3 +20,10 @@ updates:
       interval: "weekly"
     commit-message:
       prefix: "chore(vscode)"
+    ignore:
+      # Must not be newer than engines.vscode in package.json, or `vsce package`
+      # refuses to build. Bump both together by hand when raising the minimum VS Code.
+      - dependency-name: "@types/vscode"
+      # Should match the Node version VS Code ships, not the latest Node.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
