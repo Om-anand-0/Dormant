@@ -243,7 +243,8 @@ def test_failed_reinstall_keeps_the_purged_record(
 
 
 def test_big_restore_skipped_without_a_tty(node_project: Fixture, dormant_data_dir: Path) -> None:
-    (dormant_data_dir / "config.toml").write_text('confirm_restore_above = "1B"\n')
+    config_file = dormant_data_dir / "config.toml"
+    config_file.write_text(config_file.read_text() + 'confirm_restore_above = "1B"\n')
     root = node_project.project_root
     age(root)
     _hibernate(root)
@@ -316,3 +317,19 @@ def test_prune_dry_run_changes_nothing(node_project: Fixture) -> None:
     assert len(records()) == 1
     assert run("prune").exit_code == 3  # non-TTY, no --yes
     assert len(records()) == 1
+
+
+# --- min_archive_size ---------------------------------------------------------------------
+
+
+def test_tiny_target_skipped_by_default(node_project: Fixture, dormant_data_dir: Path) -> None:
+    (dormant_data_dir / "config.toml").unlink()  # back to the real 1 MiB default
+    root = node_project.project_root
+    age(root)
+    before = snapshot(node_project.target)
+    data = _hibernate(root)
+    (nm,) = [a for a in data["actions"] if Path(a["target"]).name == "node_modules"]
+    assert nm["action"] == "skip"
+    assert "min_archive_size" in nm["reason"]
+    assert snapshot(node_project.target) == before
+    assert not (root / ".dormant").exists()

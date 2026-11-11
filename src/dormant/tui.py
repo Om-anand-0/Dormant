@@ -61,7 +61,8 @@ def _load(path: Path, max_age: timedelta | None) -> list[Item]:
     rows = survey(path, KINDS, max_age or settings.older_than, settings.ignore)
     info = {t.path: (r, t) for r in rows for t in r.project.targets}
     items = []
-    for a in hibernation.plan(rows, purge_deps=False):
+    min_bytes = settings.min_archive_size
+    for a in hibernation.plan(rows, purge_deps=False, min_archive_bytes=min_bytes):
         row, _ = info[a.target]
         note = a.reason if a.op == Op.SKIP or a.reason else ""
         eco = ", ".join(d.name for d in row.project.detectors)

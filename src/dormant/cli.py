@@ -240,7 +240,7 @@ def hibernate(
     kinds = _parse_kinds(kind)
     _warn_wsl(path)
     rows = survey(path, kinds, max_age, settings.ignore)
-    actions = hibernation.plan(rows, purge_deps=purge)
+    actions = hibernation.plan(rows, purge_deps=purge, min_archive_bytes=settings.min_archive_size)
     todo = [a for a in actions if a.op != Op.SKIP]
     base = Path(path).absolute()
     if json_out and not yes:
