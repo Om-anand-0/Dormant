@@ -1,0 +1,184 @@
+# Ecosystem detectors. Adding a language never needs Python code.
+#
+# [[detector]]
+#   name     unique id
+#   markers  file or folder names whose presence marks a project root. Glob patterns
+#            work ("*.csproj"); a trailing "/" means the marker must be a folder.
+# [[detector.target]]
+#   path     a single folder name directly inside the project root
+#   kind     "dependencies", "build" or "cache" (caches are deleted, never restored)
+# [detector.reinstall]
+#   lockfile = "command"; the first lockfile that exists wins, in file order.
+#   The command is split into an argument list with POSIX shell quoting rules and run
+#   without a shell, from the project root. Use a table for per-OS commands:
+#   lockfile = { posix = "...", windows = "..." }. A program starting with "./" is
+#   a file in the project root; anything else is looked up on PATH.
+#
+# ponytail: target paths are one folder name, top level only (no recursion, no "a/b").
+# So a project's root __pycache__ is found but src/pkg/__pycache__ is not. Allow nested
+# paths or a "recursive = true" flag when the missed bytes turn out to matter.
+
+[[detector]]
+name = "node"
+markers = ["package.json"]
+
+[[detector.target]]
+path = "node_modules"
+kind = "dependencies"
+
+[[detector.target]]
+path = ".next"
+kind = "build"
+
+[[detector.target]]
+path = "dist"
+kind = "build"
+
+[[detector.target]]
+path = ".turbo"
+kind = "cache"
+
+[detector.reinstall]
+"pnpm-lock.yaml" = "pnpm install --frozen-lockfile"
+"yarn.lock" = "yarn install --immutable"
+"package-lock.json" = "npm ci"
+
+[[detector]]
+name = "python"
+markers = ["pyproject.toml", "requirements.txt"]
+
+[[detector.target]]
+path = ".venv"
+kind = "dependencies"
+
+[[detector.target]]
+path = "venv"
+kind = "dependencies"
+
+[[detector.target]]
+path = ".tox"
+kind = "cache"
+
+[[detector.target]]
+path = "__pycache__"
+kind = "cache"
+
+[[detector.target]]
+path = ".pytest_cache"
+kind = "cache"
+
+[[detector.target]]
+path = ".mypy_cache"
+kind = "cache"
+
+[detector.reinstall]
+"uv.lock" = "uv sync --frozen"
+"poetry.lock" = "poetry install --no-root"
+# No requirements.txt entry: which interpreter or venv it targets is ambiguous, so
+# projects with only a requirements.txt are always archived, never purged.
+
+[[detector]]
+name = "rust"
+markers = ["Cargo.toml"]
+
+[[detector.target]]
+path = "target"
+kind = "build"
+
+[detector.reinstall]
+"Cargo.lock" = "cargo build"
+
+[[detector]]
+name = "maven"
+markers = ["pom.xml"]
+
+[[detector.target]]
+path = "target"
+kind = "build"
+
+# No reinstall: pom.xml is the marker, not a lockfile, and target/ is build output
+# (always archived).
+
+[[detector]]
+name = "gradle"
+markers = ["build.gradle", "build.gradle.kts"]
+
+[[detector.target]]
+path = "build"
+kind = "build"
+
+[[detector.target]]
+path = ".gradle"
+kind = "cache"
+
+[detector.reinstall]
+"gradlew" = { posix = "./gradlew build", windows = "./gradlew.bat build" }
+
+[[detector]]
+name = "flutter"
+markers = ["pubspec.yaml"]
+
+[[detector.target]]
+path = ".dart_tool"
+kind = "dependencies"
+
+[[detector.target]]
+path = "build"
+kind = "build"
+
+[detector.reinstall]
+"pubspec.lock" = "flutter pub get"
+
+[[detector]]
+name = "php"
+markers = ["composer.json"]
+
+[[detector.target]]
+path = "vendor"
+kind = "dependencies"
+
+[detector.reinstall]
+"composer.lock" = "composer install"
+
+[[detector]]
+name = "dotnet"
+markers = ["*.csproj", "*.fsproj", "*.vbproj"]
+
+[[detector.target]]
+path = "bin"
+kind = "build"
+
+[[detector.target]]
+path = "obj"
+kind = "build"
+
+[detector.reinstall]
+"packages.lock.json" = "dotnet restore --locked-mode"
+
+[[detector]]
+name = "cocoapods"
+markers = ["Podfile"]
+
+[[detector.target]]
+path = "Pods"
+kind = "dependencies"
+
+[detector.reinstall]
+"Podfile.lock" = "pod install"
+
+# Unity regenerates Library/ on open, so there is no reinstall command.
+[[detector]]
+name = "unity"
+markers = ["ProjectSettings/"]
+
+[[detector.target]]
+path = "Library"
+kind = "build"
+
+[[detector.target]]
+path = "Temp"
+kind = "cache"
+
+[[detector.target]]
+path = "Logs"
+kind = "cache"

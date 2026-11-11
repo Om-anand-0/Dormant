@@ -6,8 +6,8 @@
 
 [![PyPI](https://img.shields.io/pypi/v/dormant.svg)](https://pypi.org/project/dormant/)
 [![Python versions](https://img.shields.io/pypi/pyversions/dormant.svg)](https://pypi.org/project/dormant/)
-[![CI](https://github.com/OWNER/dormant/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/dormant/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/codecov/c/github/OWNER/dormant)](https://codecov.io/gh/OWNER/dormant)
+[![CI](https://github.com/Om-anand-0/dormant/actions/workflows/ci.yml/badge.svg)](https://github.com/Om-anand-0/dormant/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/codecov/c/github/Om-anand-0/dormant)](https://codecov.io/gh/Om-anand-0/dormant)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ![Dormant demo: scan, hibernate, then cd back in and the folder is restored](docs/demo.gif)
@@ -198,10 +198,10 @@ Those delete folders and you reinstall by hand. Dormant archives them and restor
 
 ## Contributing
 
-Contributions are welcome, and adding an ecosystem is a good first PR. Read [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup, then look at issues labelled [`good first issue`](https://github.com/OWNER/dormant/labels/good%20first%20issue).
+Contributions are welcome, and adding an ecosystem is a good first PR. Read [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup, then look at issues labelled [`good first issue`](https://github.com/Om-anand-0/dormant/labels/good%20first%20issue).
 
 ```bash
-git clone https://github.com/OWNER/dormant
+git clone https://github.com/Om-anand-0/dormant
 cd dormant
 uv sync --all-extras
 uv run pytest

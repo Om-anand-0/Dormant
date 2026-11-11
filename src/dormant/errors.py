@@ -19,3 +19,21 @@ class RestoreError(DormantError):
 
 class UnsafePathError(DormantError):
     """A path fell outside an allowed target root."""
+
+
+class IndexVersionError(DormantError):
+    """The index database was written by a newer Dormant than this one."""
+
+
+class ArchiveNotFoundError(DormantError):
+    """No archive record has the requested id."""
+
+
+class DetectorError(DormantError):
+    """``detectors.toml`` is malformed. The message names the detector and field."""
+
+
+class ConfigError(DormantError):
+    """``config.toml`` is malformed. The message names the key."""
+
+    exit_code: ClassVar[int] = 2
