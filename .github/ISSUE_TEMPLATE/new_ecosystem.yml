@@ -1,0 +1,54 @@
+name: New ecosystem
+description: Request support for a language, framework or tool
+title: "Detector: "
+labels: ["ecosystem"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ecosystems are a few lines of TOML. If you'd like to add it yourself, see [Adding an ecosystem](https://github.com/Om-anand-0/Dormant/blob/main/CONTRIBUTING.md#adding-an-ecosystem).
+  - type: input
+    id: name
+    attributes:
+      label: Ecosystem name
+      placeholder: Elixir
+    validations:
+      required: true
+  - type: textarea
+    id: markers
+    attributes:
+      label: Marker files
+      description: Files in the project root that identify this kind of project.
+      placeholder: mix.exs
+    validations:
+      required: true
+  - type: textarea
+    id: folders
+    attributes:
+      label: Folders to reclaim
+      description: One per line, with what each holds (dependencies, build output or cache).
+      placeholder: |
+        deps (dependencies)
+        _build (build output)
+    validations:
+      required: true
+  - type: textarea
+    id: reinstall
+    attributes:
+      label: Reinstall command
+      description: Lockfile and the command that recreates the folders from it.
+      placeholder: mix.lock -> mix deps.get
+    validations:
+      required: true
+  - type: input
+    id: size
+    attributes:
+      label: Typical size
+      description: How big these folders usually get in a real project.
+      placeholder: 200 MB to 1 GB
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I'd like to open the PR for this myself

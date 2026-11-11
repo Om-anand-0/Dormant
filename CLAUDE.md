@@ -128,10 +128,9 @@ Dormant ships on Linux, macOS and Windows from v1.0. Every feature must work on 
 - On Windows, convert paths to the `\\?\` extended form before file operations so `node_modules` paths over 260 characters work.
 - On Windows, deletes can fail because antivirus or a running process holds a file. Check with `locks.py` first, retry with exponential backoff (3 tries), and on final failure apply safety invariant 6.
 - Creating symlinks on Windows needs Developer Mode or admin. Detect this and fall back to `--reinstall` with a warning.
-- Hard links fail on FAT32 and exFAT. `platform.py` detects the filesystem; skip pnpm projects on those drives.
 - Detect WSL (`/proc/version` contains `microsoft`). If scanning under `/mnt/<drive>`, warn that it is slow and suggest the native Windows install.
 - On macOS, create `.metadata_never_index` in the archive store so Spotlight skips it.
-- Treat `psutil.AccessDenied` when reading another process's cwd as "project in use" and skip it.
+- A project is "in use" when a process's cwd or executable is inside it. Processes whose cwd can't be read (`psutil.AccessDenied`) are skipped, not treated as in use: on Windows many of the user's own elevated processes deny the read, which would mark every project in use. The archiver's lock check, retry and rollback are the real guard.
 
 ## Shell hooks
 
@@ -148,7 +147,7 @@ The hook runs on every `cd`, so it must cost close to nothing.
 
 - Ecosystems are defined in `src/dormant/detectors.toml`, not in Python. Adding a language must never need a code change.
 - Validate the file at load time and fail with the entry name and field on any error.
-- Each target has a `kind`: `dependencies`, `build` or `cache`. Caches are deleted and never restored.
+- Each target has a `kind`: `dependencies`, `build` or `cache`. Caches are deleted and never restored. Build output is always archived (never deleted outright, per invariant 4).
 - **Count only reclaimable bytes.** Files with `st_nlink > 1` (pnpm's store, uv's hard-linked venvs on Linux) free nothing when deleted, and tar restores them as plain files, which loses the dedup and uses more disk than before. The scanner reports size from `st_nlink == 1` files only. If a target is mostly hard links, hibernating costs disk instead of saving it, so default it to purge + reinstall (lockfile required, per invariant 4) or skip it with a message.
 - The scanner records every detector that matches a folder (monorepos match several) and never descends into a target folder.
 - Every new detector needs a fixture generator in `tests/fixtures/` and a round-trip test.

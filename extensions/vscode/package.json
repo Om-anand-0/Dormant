@@ -1,0 +1,68 @@
+{
+  "name": "dormant",
+  "displayName": "Dormant",
+  "description": "Wakes hibernated dependency folders (node_modules, .venv, ...) when you open a project.",
+  "version": "0.1.0",
+  "publisher": "om-anand",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Om-anand-0/Dormant.git",
+    "directory": "extensions/vscode"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "Dormant runs the dormant executable in the workspace folder."
+    },
+    "virtualWorkspaces": false
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "dormant.wake",
+        "title": "Wake this workspace",
+        "category": "Dormant"
+      }
+    ],
+    "configuration": {
+      "title": "Dormant",
+      "properties": {
+        "dormant.executablePath": {
+          "type": "string",
+          "default": "dormant",
+          "scope": "machine",
+          "description": "Path to the dormant CLI executable."
+        },
+        "dormant.autoWake": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run `dormant wake` automatically when a hibernated project is opened."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -watch -p .",
+    "lint": "tsc --noEmit -p .",
+    "test": "tsc -p . && node --test \"out/test/*.test.js\"",
+    "package": "npx @vscode/vsce package",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/vscode": "1.90.0",
+    "typescript": "7.0.2"
+  }
+}
