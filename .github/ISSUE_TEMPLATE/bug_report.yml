@@ -1,0 +1,88 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. If this could let Dormant delete or corrupt files, or write outside a project, please report it privately through [Security Advisories](https://github.com/Om-anand-0/Dormant/security/advisories/new) instead.
+  - type: checkboxes
+    id: data-loss
+    attributes:
+      label: Data loss
+      options:
+        - label: This bug lost, deleted or corrupted files
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: The actual behavior, including any error output.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. dormant hibernate ~/code/app --yes
+        2. cd ~/code/app
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - WSL
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: os-version
+    attributes:
+      label: OS version
+      placeholder: Ubuntu 24.04, macOS 15.5, Windows 11 24H2
+  - type: dropdown
+    id: shell
+    attributes:
+      label: Shell
+      options:
+        - zsh
+        - bash
+        - fish
+        - PowerShell
+        - VS Code extension
+        - Not using a hook
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      description: Output of `python --version`
+    validations:
+      required: true
+  - type: input
+    id: dormant-version
+    attributes:
+      label: Dormant version
+      description: Output of `dormant --version`
+    validations:
+      required: true
+  - type: textarea
+    id: scan-json
+    attributes:
+      label: "`dormant scan --json` output"
+      description: Run it on the affected project. Remove anything private.
+      render: json

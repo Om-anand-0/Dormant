@@ -23,7 +23,7 @@ Every reclaimable folder is one of three kinds, and the kind decides what Dorman
 | Kind | Examples | Default action | Restore |
 | --- | --- | --- | --- |
 | Dependencies | `node_modules`, `.venv`, `Pods/`, `vendor/` | Hibernate | Decompress archive |
-| Build output | Rust `target/`, Gradle `build/`, `.next/`, `dist/` | Hibernate if over 200 MB, else delete | Decompress, or let the build tool rebuild |
+| Build output | Rust `target/`, Gradle `build/`, `.next/`, `dist/` | Hibernate (always archived: deleting needs an archive or a lockfile) | Decompress |
 | Caches | `__pycache__`, `.pytest_cache`, `.mypy_cache`, `.turbo` | Delete | Never, the tool regenerates them |
 
 Two modes apply to dependencies:
