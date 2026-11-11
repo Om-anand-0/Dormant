@@ -125,9 +125,22 @@ def symlinks_supported(probe_dir: Path) -> bool:
     return True
 
 
-# A repository's own .git/config can make even read-only git commands run programs
-# (core.fsmonitor). Dormant runs git inside untrusted clones, so switch that off.
-GIT_SAFE_CONFIG = ("-c", "core.fsmonitor=false")
+# A repository's own .git/config can make even read-only git commands run programs:
+# core.fsmonitor on index reads, gpg.*program when log verifies signatures. Dormant runs
+# git inside untrusted clones, so every such key is overridden on the command line
+# (command-line -c beats repo config). Only rev-parse, ls-files and log are ever run.
+GIT_SAFE_CONFIG = (
+    "-c",
+    "core.fsmonitor=false",
+    "-c",
+    "log.showSignature=false",
+    "-c",
+    "gpg.program=false",
+    "-c",
+    "gpg.ssh.program=false",
+    "-c",
+    "gpg.x509.program=false",
+)
 
 _IO_REPARSE_TAG_MOUNT_POINT = 0xA0000003
 

@@ -32,7 +32,18 @@ def last_activity(project_root: Path, exclude: Iterable[Path] = ()) -> float:
 def _git_commit_time(root: Path) -> float:
     if not in_git_repo(root):
         return 0.0
-    cmd = ["git", *GIT_SAFE_CONFIG, "-C", str(root), "log", "-1", "--format=%ct", "--", "."]
+    cmd = [
+        "git",
+        *GIT_SAFE_CONFIG,
+        "-C",
+        str(root),
+        "log",
+        "--no-show-signature",
+        "-1",
+        "--format=%ct",
+        "--",
+        ".",
+    ]
     try:
         out = subprocess.run(  # noqa: S603 - fixed argument list, no shell
             cmd, capture_output=True, text=True, timeout=GIT_TIMEOUT, check=True
