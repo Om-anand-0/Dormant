@@ -7,7 +7,6 @@
 [![PyPI](https://img.shields.io/pypi/v/dormant.svg)](https://pypi.org/project/dormant/)
 [![Python versions](https://img.shields.io/pypi/pyversions/dormant.svg)](https://pypi.org/project/dormant/)
 [![CI](https://github.com/Om-anand-0/dormant/actions/workflows/ci.yml/badge.svg)](https://github.com/Om-anand-0/dormant/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/codecov/c/github/Om-anand-0/dormant)](https://codecov.io/gh/Om-anand-0/dormant)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ![Dormant demo: scan, hibernate, then cd back in and the folder is restored](docs/demo.gif)
@@ -167,6 +166,9 @@ confirm_restore_above = "1GB"
 
 # zstd compression level (1 = fastest, 19 = smallest)
 compression_level = 3
+
+# Skip folders smaller than this: the archive would not save space
+min_archive_size = "1MB"
 ```
 
 To exclude one project, add an empty `.dormantignore` file to its root.

@@ -9,6 +9,7 @@ from dormant import archiver, purge
 from dormant.detectors import Detector, Reinstall
 from dormant.index import Index
 from dormant.survey import Row
+from dormant.units import format_size
 
 
 class Op(StrEnum):
@@ -34,7 +35,11 @@ class Action:
 
 
 def plan(
-    rows: Iterable[Row], *, purge_deps: bool, detectors: Sequence[Detector] | None = None
+    rows: Iterable[Row],
+    *,
+    purge_deps: bool,
+    detectors: Sequence[Detector] | None = None,
+    min_archive_bytes: int = 0,
 ) -> list[Action]:
     """Turn survey rows into actions.
 
@@ -46,6 +51,7 @@ def plan(
         rows: Survey rows (already filtered by staleness and kind).
         purge_deps: The ``--purge`` flag.
         detectors: Registry for reinstall lookups; the bundled one when None.
+        min_archive_bytes: Targets smaller than this are skipped instead of archived.
 
     Returns:
         Actions in row order, skips included with a reason.
@@ -56,7 +62,8 @@ def plan(
         for t in row.project.targets:
             base = Action(root, t.path, t.kind, Op.SKIP, t.reclaimable_bytes)
             cmd = purge.reinstall_for(root, t.path.name, t.detector, detectors)
-            actions.append(_decide(base, row.in_use, t.tracked, t.hardlinked, cmd, purge_deps))
+            a = _decide(base, row.in_use, t.tracked, t.hardlinked, cmd, purge_deps)
+            actions.append(_skip_if_tiny(a, min_archive_bytes))
     return actions
 
 
@@ -84,6 +91,13 @@ def _decide(
     if purge_deps and a.kind == "dependencies" and cmd is not None:
         return to(Op.PURGE)
     return to(Op.ARCHIVE)
+
+
+def _skip_if_tiny(a: Action, min_bytes: int) -> Action:
+    if a.op is not Op.ARCHIVE or a.bytes >= min_bytes:
+        return a
+    reason = f"under min_archive_size ({format_size(min_bytes)}); archiving would not save space"
+    return Action(a.project_root, a.target, a.kind, Op.SKIP, a.bytes, reason, a.reinstall)
 
 
 def execute(action: Action, *, index: Index, level: int) -> None:

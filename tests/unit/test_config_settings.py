@@ -19,13 +19,14 @@ def test_all_keys(dormant_data_dir: Path) -> None:
     _write(
         dormant_data_dir,
         'older_than = "2w"\nignore = ["~/work/*", "**/backup"]\n'
-        'confirm_restore_above = "500MB"\ncompression_level = 19\n',
+        'confirm_restore_above = "500MB"\ncompression_level = 19\nmin_archive_size = "4MB"\n',
     )
     s = config.load_settings()
     assert s.older_than == timedelta(weeks=2)
     assert s.ignore == (str(Path("~").expanduser()) + "/work/*", "**/backup")
     assert s.confirm_restore_above == 500 * 1024**2
     assert s.compression_level == 19
+    assert s.min_archive_size == 4 * 1024**2
 
 
 @pytest.mark.parametrize(

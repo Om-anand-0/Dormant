@@ -28,6 +28,8 @@ class Settings:
     ignore: tuple[str, ...] = ()
     confirm_restore_above: int = 1024**3
     compression_level: int = 3
+    # Below this, the archive's own headers can outweigh the space it frees.
+    min_archive_size: int = 1024**2
 
 
 def data_dir() -> Path:
@@ -95,6 +97,9 @@ def load_settings() -> Settings:
             doc, "confirm_restore_above", parse_size, defaults.confirm_restore_above, path
         ),
         compression_level=_level(doc.get("compression_level", defaults.compression_level), path),
+        min_archive_size=_parsed(
+            doc, "min_archive_size", parse_size, defaults.min_archive_size, path
+        ),
     )
 
 
