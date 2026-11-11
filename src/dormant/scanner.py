@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from dormant.detectors import Detector, Kind
-from dormant.platform import IS_WINDOWS, long_path
+from dormant.platform import GIT_SAFE_CONFIG, IS_WINDOWS, long_path
 
 logger = logging.getLogger(__name__)
 
@@ -224,7 +224,7 @@ def _tracked(root: Path, names: list[str]) -> set[str]:
     One ``git ls-files`` call per project. If git is missing or fails inside a repo,
     every name counts as tracked: unknown means hands off.
     """
-    cmd = ["git", "-C", str(root), "ls-files", "-z", "--", *names]
+    cmd = ["git", *GIT_SAFE_CONFIG, "-C", str(root), "ls-files", "-z", "--", *names]
     try:
         out = subprocess.run(cmd, capture_output=True, timeout=GIT_TIMEOUT, check=True)  # noqa: S603
     except (OSError, subprocess.SubprocessError) as exc:

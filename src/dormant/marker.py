@@ -10,7 +10,9 @@ import logging
 import time
 from pathlib import Path
 
+from dormant.errors import UnsafePathError
 from dormant.index import ArchiveState, Index
+from dormant.platform import is_link_path
 
 logger = logging.getLogger(__name__)
 
@@ -52,18 +54,27 @@ def update(project_root: Path, index: Index) -> None:
         _remove(project_root)
 
 
+def _refuse_links(*paths: Path) -> None:
+    """A cloned repo could ship these as links to make us write outside the project."""
+    for p in paths:
+        if is_link_path(p):
+            raise UnsafePathError(f"{p} is a symlink or junction; refusing to write through it")
+
+
 def _write(project_root: Path, targets: list[str]) -> None:
     folder = project_root / DIR_NAME
+    _refuse_links(folder, folder / STATE_NAME)
     folder.mkdir(exist_ok=True)
     info = {"version": 1, "updated_at": time.time(), "targets": targets}
     (folder / STATE_NAME).write_text(json.dumps(info) + "\n", encoding="utf-8")
     try:
         exclude_from_git(project_root)
-    except OSError as exc:
+    except (OSError, UnsafePathError) as exc:
         logger.warning("could not add %s to git's exclude file: %s", EXCLUDE_LINE, exc)
 
 
 def _remove(project_root: Path) -> None:
+    _refuse_links(project_root / DIR_NAME)
     state_path(project_root).unlink(missing_ok=True)
     try:
         (project_root / DIR_NAME).rmdir()
@@ -115,6 +126,7 @@ def exclude_from_git(project_root: Path) -> None:
     if gdir is None:
         return
     exclude = gdir / "info" / "exclude"
+    _refuse_links(exclude.parent, exclude)
     old = exclude.read_text(encoding="utf-8") if exclude.is_file() else ""
     if EXCLUDE_LINE in old.splitlines():
         return

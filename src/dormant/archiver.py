@@ -154,7 +154,7 @@ def _has_git_ancestor(target: Path) -> bool:
 
 
 def _run_git(git: str, cwd: Path, *args: str) -> subprocess.CompletedProcess[bytes]:
-    cmd = [git, "--literal-pathspecs", "-C", str(cwd), *args]
+    cmd = [git, *_platform.GIT_SAFE_CONFIG, "--literal-pathspecs", "-C", str(cwd), *args]
     try:
         return subprocess.run(cmd, capture_output=True, timeout=_GIT_TIMEOUT, check=False)  # noqa: S603 - fixed argv, no shell
     except subprocess.TimeoutExpired as exc:

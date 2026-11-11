@@ -6,7 +6,7 @@ import subprocess
 from collections.abc import Iterable
 from pathlib import Path
 
-from dormant.platform import long_path
+from dormant.platform import GIT_SAFE_CONFIG, long_path
 from dormant.scanner import GIT_TIMEOUT, in_git_repo, is_link
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ def last_activity(project_root: Path, exclude: Iterable[Path] = ()) -> float:
 def _git_commit_time(root: Path) -> float:
     if not in_git_repo(root):
         return 0.0
-    cmd = ["git", "-C", str(root), "log", "-1", "--format=%ct", "--", "."]
+    cmd = ["git", *GIT_SAFE_CONFIG, "-C", str(root), "log", "-1", "--format=%ct", "--", "."]
     try:
         out = subprocess.run(  # noqa: S603 - fixed argument list, no shell
             cmd, capture_output=True, text=True, timeout=GIT_TIMEOUT, check=True

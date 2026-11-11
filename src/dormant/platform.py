@@ -3,6 +3,7 @@
 import logging
 import os
 import shutil
+import stat
 import sys
 import uuid
 from pathlib import Path
@@ -122,3 +123,20 @@ def symlinks_supported(probe_dir: Path) -> bool:
         return False
     link.unlink()
     return True
+
+
+# A repository's own .git/config can make even read-only git commands run programs
+# (core.fsmonitor). Dormant runs git inside untrusted clones, so switch that off.
+GIT_SAFE_CONFIG = ("-c", "core.fsmonitor=false")
+
+_IO_REPARSE_TAG_MOUNT_POINT = 0xA0000003
+
+
+def is_link_path(path: Path) -> bool:
+    """Return True if ``path`` is a symlink or Windows junction (False if missing)."""
+    try:
+        st = os.lstat(long_path(path))
+    except FileNotFoundError:
+        return False
+    junction = getattr(st, "st_reparse_tag", 0) == _IO_REPARSE_TAG_MOUNT_POINT
+    return stat.S_ISLNK(st.st_mode) or junction
