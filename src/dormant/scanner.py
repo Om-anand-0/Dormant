@@ -56,10 +56,11 @@ def scan(
 ) -> Iterator[Project]:
     """Yield every project under ``root``.
 
-    Never follows symlinks or Windows junctions, never enters ``.git`` or a detected
-    target folder, and skips any folder holding a ``.dormantignore`` file (and all
-    below it). Non-target subfolders of a project are still walked, so nested
-    projects in a monorepo are found.
+    Never follows symlinks or Windows junctions, never enters ``.git``, a detected
+    target folder, or any folder named like a dependencies target (a stray
+    ``node_modules`` whose parent isn't a project holds packages, not projects), and
+    skips any folder holding a ``.dormantignore`` file (and all below it). Non-target
+    subfolders of a project are still walked, so nested projects in a monorepo are found.
 
     Args:
         root: Folder to scan.
@@ -70,6 +71,7 @@ def scan(
         Projects in walk order. Projects whose targets are all absent have no targets.
     """
     start = Path(os.path.abspath(root))  # noqa: PTH100 - must not resolve symlinks
+    never_enter = _dependency_dirs(detectors) | {".git"}
     stack = [(start, in_git_repo(start))]
     while stack:
         path, in_repo = stack.pop()
@@ -80,12 +82,16 @@ def scan(
         matched = tuple(d for d in detectors if any(_has_marker(m, entries) for m in d.markers))
         if matched:
             yield _project(path, matched, entries, in_repo)
-        skip = {t.path for d in matched for t in d.targets} | {".git"}
+        skip = {t.path for d in matched for t in d.targets} | never_enter
         for name, entry in entries.items():
             child = path / name
             if name in skip or not _is_real_dir(entry) or _ignored(child, ignore):
                 continue
             stack.append((child, in_repo))
+
+
+def _dependency_dirs(detectors: Sequence[Detector]) -> set[str]:
+    return {t.path for d in detectors for t in d.targets if t.kind == "dependencies"}
 
 
 def is_link(entry: os.DirEntry[str]) -> bool:

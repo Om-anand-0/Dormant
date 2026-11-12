@@ -64,3 +64,16 @@ def test_scan_usage_errors(tmp_path: Path) -> None:
     assert runner.invoke(app, ["scan", str(tmp_path), "--older", "soon"]).exit_code == 2
     assert runner.invoke(app, ["scan", str(tmp_path), "--kind", "junk"]).exit_code == 2
     assert runner.invoke(app, ["scan", str(tmp_path / "missing")]).exit_code == 2
+
+
+def test_scan_hides_tiny_targets_unless_all(tmp_path: Path) -> None:
+    root = _project(tmp_path)  # every target here is a few bytes, under the 1 MB default
+    shown = CliRunner().invoke(app, ["scan", str(root)], env={"COLUMNS": "200"})
+    assert shown.exit_code == 0, shown.output
+    assert "node_modules" not in shown.stdout
+    assert "folders under 1.0 MB hidden; --all shows them" in shown.stdout
+    everything = CliRunner().invoke(app, ["scan", str(root), "--all"], env={"COLUMNS": "200"})
+    assert "node_modules" in everything.stdout
+    assert "hidden" not in everything.stdout
+    data = json.loads(CliRunner().invoke(app, ["scan", str(root), "--json"]).stdout)
+    assert {Path(t["path"]).name for t in data[0]["targets"]} >= {"node_modules"}

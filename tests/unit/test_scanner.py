@@ -138,3 +138,14 @@ def test_windows_sample_switches_to_full_stat(
     total, reclaimable = dir_size(str(tmp_path / "t"))
     assert total == 21
     assert reclaimable == 1  # linked.js is the first file sampled, so all get stat'ed
+
+
+def test_never_enters_stray_dependency_folders(tmp_path: Path) -> None:
+    """A node_modules whose parent has no package.json holds packages, not projects."""
+    stray = tmp_path / "windsurf-project" / "node_modules"
+    _write(stray / "nwsapi" / "package.json", b"{}")
+    _write(stray / "nwsapi" / "dist" / "nwsapi.js")
+    _write(tmp_path / "loose" / ".venv" / "lib" / "pkg" / "pyproject.toml", b"[project]")
+    _write(tmp_path / "real" / "package.json", b"{}")
+    _write(tmp_path / "real" / "node_modules" / "x" / "index.js")
+    assert set(_scan(tmp_path)) == {"real"}
