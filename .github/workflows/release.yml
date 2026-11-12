@@ -77,30 +77,24 @@ jobs:
   publish-vscode:
     needs: github-release
     runs-on: ubuntu-latest
-    env:
-      VSCE_PAT: ${{ secrets.VSCE_PAT }}
+    permissions:
+      contents: read
+      id-token: write # Marketplace trusted publishing (OIDC), no stored token
     defaults:
       run:
         working-directory: extensions/vscode
     steps:
-      - name: Check for VSCE_PAT
-        id: check
-        working-directory: .
-        run: |
-          if [ -n "$VSCE_PAT" ]; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "VSCE_PAT not set; skipping Marketplace publish"
-          fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: steps.check.outputs.enabled == 'true'
         with:
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        if: steps.check.outputs.enabled == 'true'
         with:
           node-version: 22
-      - if: steps.check.outputs.enabled == 'true'
-        run: npm ci
-      - if: steps.check.outputs.enabled == 'true'
-        run: npx --yes @vscode/vsce@4.1.0 publish --pat "$VSCE_PAT"
+      - run: npm ci
+      # The Marketplace rejects a version it already has, so use the release tag's.
+      - name: Set extension version from tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: npm pkg set version="${TAG#v}"
+      # vscode:prepublish compiles the TypeScript before packaging.
+      - run: npx --yes @vscode/vsce@4.1.0 publish --oidc
