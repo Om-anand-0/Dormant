@@ -1,9 +1,10 @@
 {
-  "name": "dormant",
-  "displayName": "Dormant",
+  "name": "dormant-vscode",
+  "displayName": "Dormant: Auto-Wake Dependencies",
   "description": "Wakes hibernated dependency folders (node_modules, .venv, ...) when you open a project.",
   "version": "0.1.0",
   "publisher": "Om-Anand",
+  "icon": "icon.png",
   "license": "MIT",
   "repository": {
     "type": "git",
