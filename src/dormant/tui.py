@@ -7,12 +7,13 @@ from datetime import timedelta
 from pathlib import Path
 from typing import ClassVar
 
+from rich.text import Text
 from textual import on, work
 from textual.app import App, ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Button, DataTable, Footer, Label
+from textual.widgets import Button, DataTable, Footer, Header, Label
 
 from dormant import archiver, config, hibernation, marker
 from dormant.errors import DormantError
@@ -25,10 +26,16 @@ logger = logging.getLogger(__name__)
 KINDS = {"dependencies", "build", "cache"}
 _COLUMNS = ("", "Project", "Ecosystem", "Target", "Kind", "Size", "Last activity", "Note")
 _DONE = {Op.ARCHIVE: "archived", Op.PURGE: "purged", Op.DELETE: "deleted"}
+_KIND_STYLE = {"dependencies": "cyan", "build": "magenta", "cache": "yellow"}
+_ON, _OFF = Text("●", "bold green"), Text("○", "dim")
 _CSS = """
+DataTable { height: 1fr; border: round $primary; }
+#summary { dock: bottom; height: 1; padding: 0 1; background: $boost; }
 #confirm { width: 60; height: auto; padding: 1 2; border: thick $error;
   background: $surface; }
-Horizontal { height: auto; }
+#confirm Label { width: 100%; margin-bottom: 1; }
+#confirm Horizontal { height: auto; align-horizontal: center; }
+#confirm Button { margin: 0 1; }
 """
 
 
@@ -74,6 +81,29 @@ def _age(ts: float) -> str:
     return f"{int((time.time() - ts) // 86400)}d ago" if ts else "unknown"
 
 
+def _size(n: int) -> Text:
+    """Right-aligned size, hotter colour for bigger folders."""
+    style = "bold red" if n >= 1 << 30 else "yellow" if n >= 100 << 20 else "green"
+    return Text(format_size(n), style, justify="right")
+
+
+def _cells(item: Item, selected: bool) -> tuple[Text, ...]:
+    a = item.action
+    cells: tuple[Text, ...] = (
+        _ON if selected else _OFF,
+        Text(a.project_root.name, "bold"),
+        Text(item.ecosystem, "blue"),
+        Text(a.target.name),
+        Text(a.kind, _KIND_STYLE.get(a.kind, "")),
+        _size(a.bytes),
+        Text(_age(item.last_activity), "italic"),
+        Text(item.note, "dim"),
+    )
+    if a.op == Op.SKIP:
+        cells = tuple(Text(c.plain, "dim strike", justify=c.justify) for c in cells)
+    return cells
+
+
 class Confirm(ModalScreen[bool]):
     """Yes/No modal; dismisses with True only on Yes."""
 
@@ -82,7 +112,7 @@ class Confirm(ModalScreen[bool]):
         Binding("n,escape", "answer(False)", "No"),
     ]
 
-    def __init__(self, question: str) -> None:
+    def __init__(self, question: Text) -> None:
         super().__init__()
         self.question = question
 
@@ -106,6 +136,7 @@ class DormantTui(App[None]):
     """npkill-style picker: space selects, enter/h hibernates, q quits."""
 
     CSS = _CSS
+    TITLE = "Dormant"
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("space", "toggle_row", "Select"),
         Binding("a", "select_all", "All"),
@@ -125,13 +156,16 @@ class DormantTui(App[None]):
         self.busy = False
 
     def compose(self) -> ComposeResult:
-        yield DataTable(cursor_type="row")
+        yield Header()
+        yield DataTable(cursor_type="row", zebra_stripes=True)
         yield Label("", id="summary")
         yield Footer()
 
     def on_mount(self) -> None:
         """Set up the table and start the survey."""
-        self.query_one(DataTable).add_columns(*_COLUMNS)
+        table = self.query_one(DataTable)
+        table.add_columns(*_COLUMNS)
+        table.loading = True
         self.sub_title = f"scanning {self.path} ..."
         self._scan()
 
@@ -148,7 +182,8 @@ class DormantTui(App[None]):
         self._render_table()
 
     def _scanned(self) -> None:
-        self.sub_title = f"{len(self.items)} targets"
+        self.query_one(DataTable).loading = False
+        self.sub_title = f"{self.path}  ·  {len(self.items)} targets"
 
     def _render_table(self) -> None:
         table = self.query_one(DataTable)
@@ -158,22 +193,18 @@ class DormantTui(App[None]):
         else:
             keys = sorted(self.items, key=lambda k: self.items[k].last_activity)
         for k in keys:
-            i = self.items[k]
-            a = i.action
-            cells: tuple[str, ...] = (
-                "*" if k in self.selected else " ",
-                a.project_root.name,
-                i.ecosystem,
-            )
-            cells += (a.target.name, a.kind, format_size(a.bytes), _age(i.last_activity), i.note)
-            if a.op == Op.SKIP:
-                cells = tuple(f"[dim]{c}[/dim]" for c in cells)
-            table.add_row(*cells, key=k)
+            table.add_row(*_cells(self.items[k], k in self.selected), key=k)
         self._update_summary()
 
     def _update_summary(self) -> None:
         total = sum(self.items[k].action.bytes for k in self.selected)
-        text = f"{len(self.selected)} selected, {format_size(total)} reclaimable"
+        text = Text.assemble(
+            (f" {len(self.selected)} ", "bold reverse green"),
+            " selected  ·  ",
+            (format_size(total), "bold yellow"),
+            " reclaimable  ·  sorted by ",
+            (self.sort_by, "bold cyan"),
+        )
         self.query_one("#summary", Label).update(text)
 
     def _current(self) -> str | None:
@@ -189,7 +220,7 @@ class DormantTui(App[None]):
             return
         self.selected ^= {k}
         table = self.query_one(DataTable)
-        table.update_cell(k, table.ordered_columns[0].key, "*" if k in self.selected else " ")
+        table.update_cell(k, table.ordered_columns[0].key, _ON if k in self.selected else _OFF)
         self._update_summary()
 
     def action_select_all(self) -> None:
@@ -213,7 +244,13 @@ class DormantTui(App[None]):
         if self.busy or not self.selected:
             return
         total = sum(self.items[k].action.bytes for k in self.selected)
-        question = f"Archive {len(self.selected)} folders, free {format_size(total)}?"
+        question = Text.assemble(
+            "Archive ",
+            (str(len(self.selected)), "bold"),
+            " folders and free ",
+            (format_size(total), "bold yellow"),
+            "?",
+        )
         self.push_screen(Confirm(question), self._confirmed)
 
     def _confirmed(self, yes: bool | None) -> None:
@@ -234,9 +271,10 @@ class DormantTui(App[None]):
 
     def _set_status(self, key: str, status: str) -> None:
         table = self.query_one(DataTable)
-        table.update_cell(key, table.ordered_columns[-1].key, status)
+        style = "bold red" if status.startswith("failed") else "bold green"
+        table.update_cell(key, table.ordered_columns[-1].key, Text(status, style))
         self.selected.discard(key)
-        table.update_cell(key, table.ordered_columns[0].key, " ")
+        table.update_cell(key, table.ordered_columns[0].key, Text("✓", "green"))
         self._update_summary()
 
     def _finished(self) -> None:
