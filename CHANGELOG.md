@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `dormant scan` hides folders smaller than `min_archive_size` from its table and says how many it hid; `--all` lists them. `--json` output still includes every folder.
+- `dormant tui` looks nicer: a header, coloured sizes and kinds, zebra rows, a spinner while it scans, and a live summary bar.
 
 ### Fixed
 
